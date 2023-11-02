@@ -13,8 +13,8 @@ HCURSOR cursor = LoadCursor(NULL, IDC_ARROW);
 
 HWND hWndG;
 
-Renderer* renderer;
-Maze* maze;
+std::unique_ptr<Renderer> renderer;
+std::shared_ptr<Maze> maze;
 
 void UpdateWindowSize(HWND hWnd) {
 	HMONITOR monitor = MonitorFromWindow(hWndG, MONITOR_DEFAULTTONEAREST);
@@ -201,6 +201,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
+#ifdef _DEBUG
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_CHECK_ALWAYS_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
+
 	WNDCLASSEX wc;
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
 	wc.cbSize = sizeof(WNDCLASSEX);
@@ -225,10 +229,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 		NULL
 	);
 
-	maze = new Maze(hWndG);
+	maze = std::shared_ptr<Maze>(new Maze(hWndG));
 	maze->Generate();
 
-	renderer = new Renderer(hWndG, maze);
+	renderer = std::unique_ptr<Renderer>(new Renderer(hWndG, maze));
 
 	UpdateWindowSize(hWndG);
 
@@ -238,14 +242,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 	MSG msg = {};
 	bool quit = false;
 
-	thread render([=] {
+	thread render([&quit] {
 		LARGE_INTEGER frequency;
 		LARGE_INTEGER t1, t2;
 
 		QueryPerformanceFrequency(&frequency);
 		QueryPerformanceCounter(&t1);
 
-		while (1) {
+		while (!quit) {
 			InvalidateRect(hWndG, NULL, FALSE);
 			Sleep(1);
 			QueryPerformanceCounter(&t2);
@@ -269,9 +273,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 		}
 	}
 	
-	render.detach();
-
-	maze->~Maze();
+	render.join();
 
 	return 0;
 }

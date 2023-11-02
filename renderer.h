@@ -5,10 +5,10 @@
 
 class Renderer {
 public:
-	Renderer(HWND hWnd_, Maze* maze);
+	Renderer(HWND hWnd_, std::shared_ptr<Maze> maze);
 	~Renderer();
 
-	Maze* maze;
+	std::shared_ptr<Maze> maze;
 	/*
 	renderMode = 0: 2D rendering, 2D gameplay
 	renderMode = 1: 2D rendering, 3D gameplay

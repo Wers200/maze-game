@@ -1,6 +1,6 @@
 ﻿#include "renderer.h"
 
-Renderer::Renderer(HWND hWnd_, Maze* maze) :
+Renderer::Renderer(HWND hWnd_, std::shared_ptr<Maze> maze) :
 	hWnd(hWnd_),
 	maze(maze),
 
@@ -255,6 +255,7 @@ HRESULT Renderer::Render() {
 
 					renderTarget->DrawLine(point.point, wallPoint.point, whiteBrush, 0.01f);
 					if (brush) renderTarget->FillEllipse(wallPoint, brush);
+					SafeRelease(&brush);
 				}
 			}
 		}

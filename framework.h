@@ -15,6 +15,10 @@
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dwrite.lib")
 
+#ifdef _DEBUG
+#include <crtdbg.h>
+#endif
+
 using namespace std;
 using namespace Microsoft::WRL;
 

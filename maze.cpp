@@ -6,7 +6,7 @@ long PairToLong(int x, int y) {
 
 Maze::Maze(HWND hWnd_) :
 	hWnd(hWnd_),
-	board(),
+	board(nullptr),
 	x(0.5),
 	y(0.5),
 	width(10),
@@ -38,14 +38,14 @@ Maze::~Maze() {
 	generation.join();
 
 	if (board) free(board);
+	board = nullptr;
 }
 
 void Maze::Reallocate() {
 	if (board) free(board);
 	board = (BYTE*)malloc(sizeof(BYTE) * width * height);
-	if (board) ZeroMemory(board, sizeof(BYTE) * width * height);
+	if (board) memset(board, 0, sizeof(BYTE) * width * height);
 	if (!board) Reallocate();
-	return;
 }
 
 bool Maze::CellCheck(int x, int y, BYTE mask) {
