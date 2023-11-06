@@ -46,7 +46,6 @@ void Maze::Reallocate() {
 	board = (BYTE*)malloc(sizeof(BYTE) * width * height);
 	if (board) memset(board, 0, sizeof(BYTE) * width * height);
 	if (!board) Reallocate();
-	return;
 }
 
 bool Maze::CellCheck(int x, int y, BYTE mask) {
