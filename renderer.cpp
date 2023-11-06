@@ -100,79 +100,6 @@ void Renderer::Resize(UINT width, UINT height) {
 	}
 }
 
-double Renderer::CastRay(double x, double y, double direction) {
-	double xComponent = cos(direction);
-	double yComponent = sin(direction);
-
-
-	if (xComponent != 0 && yComponent != 0) {
-		double slope = yComponent / xComponent;
-
-		double minimum = LONG_MAX;
-
-		if (yComponent > 0) {
-			for (int i = (int)y + 1; i <= maze->height; i++) {
-				double x_0 = (i - y) / slope + x;
-
-				D2D1_ELLIPSE wallPoint{};
-				wallPoint.point = D2D1::Point2F(x_0 * (cellSize + gridThickness), i * (cellSize + gridThickness));
-				wallPoint.radiusX = 5;
-				wallPoint.radiusY = 5;
-
-				double dist = (x_0 - x) * (x_0 - x) + (y - i) * (y - i);
-
-				if (!maze->CellCheck((int)x_0, i, maze->PathMask) && minimum > dist) minimum = dist;
-			}
-		}
-		else {
-			for (int i = (int)y; i >= 0; i--) {
-				double x_0 = (i - y) / slope + x;
-
-				D2D1_ELLIPSE wallPoint{};
-				wallPoint.point = D2D1::Point2F(x_0 * (cellSize + gridThickness), i * (cellSize + gridThickness));
-				wallPoint.radiusX = 5;
-				wallPoint.radiusY = 5;
-
-				double dist = (x_0 - x) * (x_0 - x) + (y - i) * (y - i);
-
-				if ((!maze->CellCheck((int)x_0, i - 1, maze->PathMask) || i == 0) && minimum > dist) minimum = dist;
-			}
-		}
-
-		if (xComponent > 0) {
-			for (int i = (int)x + 1; i <= maze->width; i++) {
-				double y_0 = (i - x) * slope + y;
-
-				D2D1_ELLIPSE wallPoint{};
-				wallPoint.point = D2D1::Point2F(i * (cellSize + gridThickness), y_0 * (cellSize + gridThickness));
-				wallPoint.radiusX = 5;
-				wallPoint.radiusY = 5;
-
-				double dist = (i - x) * (i - x) + (y - y_0) * (y - y_0);
-
-				if (!maze->CellCheck(i, (int)y_0, maze->PathMask) && minimum > dist) minimum = (i - x) * (i - x) + (y - y_0) * (y - y_0);
-			}
-		}
-		else {
-			for (int i = (int)x; i >= 0; i--) {
-				double y_0 = (i - x) * slope + y;
-
-				D2D1_ELLIPSE wallPoint{};
-				wallPoint.point = D2D1::Point2F(i * (cellSize + gridThickness), y_0 * (cellSize + gridThickness));
-				wallPoint.radiusX = 5;
-				wallPoint.radiusY = 5;
-
-				double dist = (i - x) * (i - x) + (y - y_0) * (y - y_0);
-
-				if ((!maze->CellCheck(i - 1, (int)y_0, maze->PathMask) || i == 0) && minimum > dist) minimum = (i - x) * (i - x) + (y - y_0) * (y - y_0);
-			}
-		}
-
-		return sqrt(minimum);
-	}
-	else return 0;
-}
-
 HRESULT Renderer::Render() {
 	HRESULT hr = S_OK;
 
@@ -235,8 +162,8 @@ HRESULT Renderer::Render() {
 				point.radiusY = cellSize / 10.0f;
 				renderTarget->FillEllipse(point, playerBrush);
 
-				for (double i = maze->GetPlayerDirection() - PI / 4; i < maze->GetPlayerDirection() + PI / 4 - PI / (2 * width); i += PI / (4 * width)) {
-					double dist = CastRay(maze->x, maze->y, i);
+				for (double i = maze->GetPlayerDirection() - PI / 4; i <= maze->GetPlayerDirection() + PI / 4; i += PI / (2 * width)) {
+					double dist = maze->CastRay(maze->x, maze->y, i);
 
 					D2D1_ELLIPSE wallPoint{};
 					wallPoint.point = D2D1::Point2F(point.point.x + cos(i) * dist * (cellSize + gridThickness), point.point.y + sin(i) * dist * (cellSize + gridThickness));
@@ -253,7 +180,8 @@ HRESULT Renderer::Render() {
 						1, (wallPointNotScaled.x >= maze->width - 1) && (wallPointNotScaled.y >= maze->height - 1) ? 1 : 0,
 						1 - min(dist * cos(i - maze->GetPlayerDirection()), cameraRange) / cameraRange), &brush);
 
-					renderTarget->DrawLine(point.point, wallPoint.point, whiteBrush, 0.01f);
+					renderTarget->DrawLine(point.point, wallPoint.point, whiteBrush, 0.01f);					
+
 					if (brush) renderTarget->FillEllipse(wallPoint, brush);
 					SafeRelease(&brush);
 				}
@@ -262,8 +190,8 @@ HRESULT Renderer::Render() {
 		else {
 			int j = 0;
 
-			for (double i = maze->GetPlayerDirection() - PI / 4; i < maze->GetPlayerDirection() + PI / 4 - PI / (2 * width); i += PI / (2 * width)) {
-				double dist = CastRay(maze->x, maze->y, i);
+			for (double i = maze->GetPlayerDirection() - PI / 4; i < maze->GetPlayerDirection() + PI / 4; i += PI / (2 * width)) {
+				double dist = maze->CastRay(maze->x, maze->y, i);
 
 				D2D1_POINT_2F point = D2D1::Point2F(maze->x + cos(i) * dist, maze->y + sin(i) * dist);
 
@@ -274,6 +202,7 @@ HRESULT Renderer::Render() {
 					1 - min(dist * cos(i - maze->GetPlayerDirection()), cameraRange) / cameraRange), &brush);
 
 				if(brush) renderTarget->DrawLine(D2D1::Point2F(j, 0), D2D1::Point2F(j, height), brush, 1.0f);
+				SafeRelease(&brush);
 
 				j++;
 			}

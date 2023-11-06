@@ -201,10 +201,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
-#ifdef _DEBUG
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_CHECK_ALWAYS_DF | _CRTDBG_DELAY_FREE_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-#endif
-
 	WNDCLASSEX wc;
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
 	wc.cbSize = sizeof(WNDCLASSEX);
@@ -253,6 +249,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 			InvalidateRect(hWndG, NULL, FALSE);
 			Sleep(1);
 			QueryPerformanceCounter(&t2);
+
 			if (renderer->renderMode != 0) {
 				maze->PlayerUpdate((t2.QuadPart - t1.QuadPart) * 1.0 / frequency.QuadPart, &t1);
 				if ((int)trunc(maze->x) == width - 1 && (int)trunc(maze->y) == height - 1) renderer->showPath = true;
