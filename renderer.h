@@ -31,8 +31,6 @@ private:
 	HRESULT CreateDeviceResources();
 	void DiscardDeviceResources();
 
-	double CastRay(double x, double y, double direction);
-
 	HWND hWnd;
 	ID2D1Factory* factory;
 	ID2D1HwndRenderTarget* renderTarget;

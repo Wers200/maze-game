@@ -201,13 +201,32 @@ void Maze::PlayerUpdate(double delta, LARGE_INTEGER* timepoint) {
 	xVelocity *= (1 - friction * dt);
 	yVelocity *= (1 - friction * dt);
 
-	if (!CellCheck((int)trunc(x + xVelocity * dt), (int)trunc(y), PathMask) || x + xVelocity * dt <= 0 || !CellCheck((int)trunc(x), (int)trunc(y + yVelocity * dt), PathMask) || y + yVelocity * dt <= 0) {
+	bool fullScaleCheck = true;
+
+	if (CastRay(x, y, 0) - xVelocity * dt < 1 / 10.0 - 1 / 100.0 || CastRay(x, y, PI) + xVelocity * dt < 1 / 10.0 - 1 / 100.0) {
 		xVelocity = 0;
-		yVelocity = 0;
+		fullScaleCheck = false;
 	}
-	else {
-		x += xVelocity * dt;
-		y += yVelocity * dt;
+	else x += xVelocity * dt;
+
+	if (CastRay(x, y, PI / 2) - yVelocity * dt < 1 / 10.0 - 1 / 100.0 || CastRay(x, y, 3 * PI / 2) + yVelocity * dt < 1 / 10.0 - 1 / 100.0) {
+		yVelocity = 0;
+		fullScaleCheck = false;
+	}
+	else y += yVelocity * dt;
+
+	if (fullScaleCheck) {
+		for (double i = direction - PI; i < direction + PI; i += PI / 40) {
+			double dist = CastRay(x, y, i);
+
+			if (dist < 1 / 10.0 - 1 / 100.0) {
+				x -= xVelocity * dt;
+				y -= yVelocity * dt;
+				xVelocity *= 0;
+				yVelocity *= 0;
+				break;
+			}
+		}
 	}
 }
 
@@ -219,6 +238,89 @@ void Maze::PlayerReset() {
 	keyBackward = false;
 	keyLeft = false;
 	keyRight = false;
+}
+
+double Maze::CastRay(double x, double y, double direction) {
+	double xComponent = cos(direction);
+	double yComponent = sin(direction);
+
+	double minimum = LONG_MAX;
+
+	if (xComponent != 0 && yComponent != 0) {
+		double slope = yComponent / xComponent;
+
+		if (yComponent > 0) {
+			for (int i = (int)y + 1; i <= height; i++) {
+				double x_0 = (i - y) / slope + x;
+
+				double dist = (x_0 - x) * (x_0 - x) + (y - i) * (y - i);
+
+				if (!CellCheck((int)x_0, i, PathMask) && minimum > dist) minimum = dist;
+			}
+		}
+		else {
+			for (int i = (int)y; i >= 0; i--) {
+				double x_0 = (i - y) / slope + x;
+
+				double dist = (x_0 - x) * (x_0 - x) + (y - i) * (y - i);
+
+				if ((!CellCheck((int)x_0, i - 1, PathMask) || i == 0) && minimum > dist) minimum = dist;
+			}
+		}
+
+		if (xComponent > 0) {
+			for (int i = (int)x + 1; i <= width; i++) {
+				double y_0 = (i - x) * slope + y;
+
+				double dist = (i - x) * (i - x) + (y - y_0) * (y - y_0);
+
+				if (!CellCheck(i, (int)y_0, PathMask) && minimum > dist) minimum = dist;
+			}
+		}
+		else {
+			for (int i = (int)x; i >= 0; i--) {
+				double y_0 = (i - x) * slope + y;
+
+				double dist = (i - x) * (i - x) + (y - y_0) * (y - y_0);
+
+				if ((!CellCheck(i - 1, (int)y_0, PathMask) || i == 0) && minimum > dist) minimum = dist;
+			}
+		}
+	}
+	else if (yComponent != 0) {
+		if (yComponent > 0) {
+			for (int i = (int)y + 1; i <= height; i++) {
+				double dist = (y - i) * (y - i);
+
+				if (!CellCheck(x, i, PathMask) && minimum > dist) minimum = dist;
+			}
+		}
+		else {
+			for (int i = (int)y; i >= 0; i--) {
+				double dist = (y - i) * (y - i);
+
+				if ((!CellCheck(x, i - 1, PathMask) || i == 0) && minimum > dist) minimum = dist;
+			}
+		}
+	}
+	else {
+		if (xComponent > 0) {
+			for (int i = (int)x + 1; i <= width; i++) {
+				double dist = (i - x) * (i - x);
+
+				if (!CellCheck(i, y, PathMask) && minimum > dist) minimum = dist;
+			}
+		}
+		else {
+			for (int i = (int)x; i >= 0; i--) {
+				double dist = (i - x) * (i - x);
+
+				if ((!CellCheck(i - 1, y, PathMask) || i == 0) && minimum > dist) minimum = dist;
+			}
+		}
+	}
+
+	return sqrt(minimum);
 }
 
 double Maze::GetPlayerDirection() {

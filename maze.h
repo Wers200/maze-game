@@ -33,6 +33,7 @@ public:
 	void PlayerReset();
 
 	double GetPlayerDirection();
+	double CastRay(double x, double y, double direction);
 private:
 	HWND hWnd;
 
